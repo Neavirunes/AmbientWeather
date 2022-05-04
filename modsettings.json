@@ -1,0 +1,49 @@
+{
+    "Version": "0.1",
+    "Sections": [
+        {
+            "Name": "General",
+            "Description": "General Settings for Ambient Weather",
+            "IsAdvanced": false,
+            "Keys": [
+                {
+                    "Min": 0.0,
+                    "Max": 1.0,
+                    "Value": 1.0,
+                    "Name": "RainVolume",
+                    "Description": "Volume of rain indoors",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderFloatKey"
+                },
+                {
+                    "Min": 0.0,
+                    "Max": 1.0,
+                    "Value": 1.0,
+                    "Name": "StormVolume",
+                    "Description": "Volume of lightning and thunder indoors",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderFloatKey"
+                },
+                {
+                    "Min": 0.0,
+                    "Max": 1.0,
+                    "Value": 1.0,
+                    "Name": "WindVolume",
+                    "Description": "Volume of wind indoors",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderFloatKey"
+                },
+                {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 30,
+                    "Name": "LTChance",
+                    "Description": "Chance of hearing lightning and thunder indoors",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                }
+            ],
+            "$version": "v1"
+        }
+    ]
+}

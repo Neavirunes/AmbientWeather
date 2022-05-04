@@ -1,0 +1,14 @@
+{
+    "ModTitle": "Ambient Weather",
+    "ModVersion": "0.1",
+    "ModAuthor": "Neavirunes",
+    "ContactInfo": "",
+    "DFUnity_Version": "0.13.5",
+    "ModDescription": "Weather sfx can be heard indoors\n\n\"Wind_blowing_gusting_through_french_castle_tower.wav\" by Astounded is marked with by 3.0. To view the terms, visit http://creativecommons.org/licenses/by/3.0/",
+    "GUID": "f12667e0-626f-447b-9d7d-9d2c19a4a62f",
+    "Files": [
+        "Assets/Game/Mods/AmbientWeather/modsettings.json",
+        "Assets/Game/Mods/AmbientWeather/Scripts/AmbientWeather.cs",
+        "Assets/Game/Mods/AmbientWeather/AmbientWeather.dfmod.json"
+    ]
+}
