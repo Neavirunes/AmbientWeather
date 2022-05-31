@@ -1,12 +1,14 @@
-using System;
-using System.IO;
-using System.Threading;
 using UnityEngine;
+using UnityEngine.Networking;
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Utility;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
+using System;
+using System.Collections;
+using System.IO;
+using System.Threading;
 
 namespace AmbientWeather
 {
@@ -19,7 +21,7 @@ namespace AmbientWeather
 		static AudioClip ThunderClip;
 		static AudioClip WindClip;
 		static AudioSource AWSource;
-		static AutoResetEvent AWEvent;
+		static Coroutine AWRoutine;
 		static float RainVolume;
 		static float StormVolume;
 		static float WindVolume;
@@ -34,7 +36,6 @@ namespace AmbientWeather
 		static string ThunderSound;
 		static string WindSound;
 		static System.Random BOOM;
-		static Timer AWTimer;
 
 		[Invoke(StateManager.StateTypes.Start, 0)]
 		public static void Init(InitParams initParams)
@@ -42,6 +43,12 @@ namespace AmbientWeather
 			AWMod = initParams.Mod;
 			var go = new GameObject(AWMod.Title);
 			go.AddComponent<AmbientWeatherMod>();
+
+			RainVolume = Settings.GetValue<float>("General", "RainVolume");
+			StormVolume = Settings.GetValue<float>("General", "StormVolume");
+			WindVolume = Settings.GetValue<float>("General", "WindVolume");
+			LTChance = Settings.GetValue<int>("General", "LTChance");
+			LTChance = (3 / LTChance) * 100;
 		}
 
 		void Awake()
@@ -56,6 +63,8 @@ namespace AmbientWeather
 			AWSource.spatialBlend = 0f;
 			AWSource.volume = DaggerfallUnity.Settings.SoundVolume;
 
+			StartCoroutine(GetAudioClips());
+
 			AWMod.IsReady = true;
 		}
 
@@ -68,20 +77,17 @@ namespace AmbientWeather
 					WeatherManager weatherManager = GameManager.Instance.WeatherManager;
 					if (weatherManager.IsRaining)
 					{
-						AWEvent = new AutoResetEvent(false);
-						AWTimer = new Timer(PlayRain, AWEvent, 0, 2000);
+						AWRoutine = StartCoroutine(PlayRain());
 					}
 					else if (weatherManager.IsSnowing)
 					{
-						AWEvent = new AutoResetEvent(false);
-						AWTimer = new Timer(PlaySnow, AWEvent, 0, 60000);
+						AWRoutine = StartCoroutine(PlaySnow());
 					}
 					else if (weatherManager.IsStorming)
 					{
 						BOOM = new System.Random();
 
-						AWEvent = new AutoResetEvent(false);
-						AWTimer = new Timer(PlayStorm, AWEvent, 0, 2000);
+						AWRoutine = StartCoroutine(PlayStorm());
 					}
 
 					IndoorsCheck = 1;
@@ -98,9 +104,9 @@ namespace AmbientWeather
 			{
 				if (IndoorsCheck == 1)
 				{
-					if (AWTimer != null)
+					if (AWRoutine != null)
 					{
-						AWTimer.Dispose();
+						StopCoroutine(AWRoutine);
 					}
 
 					if (AWSource != null)
@@ -116,17 +122,56 @@ namespace AmbientWeather
 			}
 		}
 
-		void PlayRain(System.Object stateInfo)
+		public static void InitMod()
+		{
+			Debug.Log("Begin mod init: Ambient Weather");
+
+			Settings = AWMod.GetSettings();
+
+			Debug.Log("Finished mod init: Ambient Weather");
+		}
+
+		IEnumerator GetAudioClips()
+		{
+			L1Sound = Path.Combine(Application.streamingAssetsPath, "Sound", "Lightning 1.ogg");
+			UnityWebRequest L1WWW = UnityWebRequestMultimedia.GetAudioClip("file://" + L1Sound, AudioType.OGGVORBIS);
+			yield return L1WWW.SendWebRequest();
+			L1Clip = DownloadHandlerAudioClip.GetContent(L1WWW);
+
+			L2Sound = Path.Combine(Application.streamingAssetsPath, "Sound", "Lightning 2.ogg");
+			UnityWebRequest L2WWW = UnityWebRequestMultimedia.GetAudioClip("file://" + L2Sound, AudioType.OGGVORBIS);
+			yield return L2WWW.SendWebRequest();
+			L2Clip = DownloadHandlerAudioClip.GetContent(L2WWW);
+
+			RainSound = Path.Combine(Application.streamingAssetsPath, "Sound", "Rain.ogg");
+			UnityWebRequest RainWWW = UnityWebRequestMultimedia.GetAudioClip("file://" + RainSound, AudioType.OGGVORBIS);
+			yield return RainWWW.SendWebRequest();
+			RainClip = DownloadHandlerAudioClip.GetContent(RainWWW);
+
+			ThunderSound = Path.Combine(Application.streamingAssetsPath, "Sound", "Thunder.ogg");
+			UnityWebRequest ThunderWWW = UnityWebRequestMultimedia.GetAudioClip("file://" + ThunderSound, AudioType.OGGVORBIS);
+			yield return ThunderWWW.SendWebRequest();
+			ThunderClip = DownloadHandlerAudioClip.GetContent(ThunderWWW);
+
+			WindSound = Path.Combine(Application.streamingAssetsPath, "Sound", "Wind.ogg");
+			UnityWebRequest WindWWW = UnityWebRequestMultimedia.GetAudioClip("file://" + WindSound, AudioType.OGGVORBIS);
+			yield return WindWWW.SendWebRequest();
+			WindClip = DownloadHandlerAudioClip.GetContent(WindWWW);
+		}
+
+		IEnumerator PlayRain()
 		{
 			AWSource.PlayOneShot(RainClip, RainVolume);
+			yield return new WaitForSeconds(2);
 		}
 
-		void PlaySnow(System.Object stateInfo)
+		IEnumerator PlaySnow()
 		{
 			AWSource.PlayOneShot(WindClip, WindVolume);
+			yield return new WaitForSeconds(60);
 		}
 
-		void PlayStorm(System.Object stateInfo)
+		IEnumerator PlayStorm()
 		{
 			AWSource.PlayOneShot(RainClip, RainVolume);
 
@@ -145,42 +190,8 @@ namespace AmbientWeather
 				default:
 					break;
 			}
-		}
 
-		public static void InitMod()
-		{
-			Debug.Log("Begin mod init: Ambient Weather");
-
-			Settings = AWMod.GetSettings();
-
-			RainVolume = Settings.GetValue<float>("General", "RainVolume");
-			StormVolume = Settings.GetValue<float>("General", "StormVolume");
-			WindVolume = Settings.GetValue<float>("General", "WindVolume");
-
-			LTChance = Settings.GetValue<int>("General", "LTChance");
-			LTChance = (3 / LTChance) * 100;
-
-			L1Sound = Path.Combine(Application.streamingAssetsPath, "Sound", "Lightning 1.ogg");
-			WWW L1WWW = new WWW("file://" + L1Sound);
-			L1Clip = L1WWW.GetAudioClip(false, true, AudioType.OGGVORBIS);
-
-			L2Sound = Path.Combine(Application.streamingAssetsPath, "Sound", "Lightning 2.ogg");
-			WWW L2WWW = new WWW("file://" + L2Sound);
-			L2Clip = L2WWW.GetAudioClip(false, true, AudioType.OGGVORBIS);
-
-			RainSound = Path.Combine(Application.streamingAssetsPath, "Sound", "Rain.ogg");
-			WWW RainWWW = new WWW("file://" + RainSound);
-			RainClip = RainWWW.GetAudioClip(false, true, AudioType.OGGVORBIS);
-
-			ThunderSound = Path.Combine(Application.streamingAssetsPath, "Sound", "Thunder.ogg");
-			WWW ThunderWWW = new WWW("file://" + ThunderSound);
-			ThunderClip = ThunderWWW.GetAudioClip(false, true, AudioType.OGGVORBIS);
-
-			WindSound = Path.Combine(Application.streamingAssetsPath, "Sound", "Wind.ogg");
-			WWW WindWWW = new WWW("file://" + WindSound);
-			WindClip = WindWWW.GetAudioClip(false, true, AudioType.OGGVORBIS);
-
-			Debug.Log("Finished mod init: Ambient Weather");
+			yield return new WaitForSeconds(2);
 		}
 	}
 }
