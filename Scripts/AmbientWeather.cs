@@ -5,6 +5,7 @@ using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Utility;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
+using DaggerfallWorkshop.Game.Weather;
 using System;
 using System.Collections;
 using System.IO;
@@ -30,6 +31,8 @@ namespace AmbientWeather
 		static int Rando;
 		static Mod AWMod;
 		static ModSettings Settings;
+		static PlayerGPS playerGPS;
+		static PlayerWeather playerWeather;
 		static string L1Sound;
 		static string L2Sound;
 		static string RainSound;
@@ -48,7 +51,6 @@ namespace AmbientWeather
 			StormVolume = Settings.GetValue<float>("General", "StormVolume");
 			WindVolume = Settings.GetValue<float>("General", "WindVolume");
 			LTChance = Settings.GetValue<int>("General", "LTChance");
-			LTChance = (3 / LTChance) * 100;
 		}
 
 		void Awake()
@@ -74,19 +76,20 @@ namespace AmbientWeather
 			{
 				if (IndoorsCheck == 0)
 				{
-					WeatherManager weatherManager = GameManager.Instance.WeatherManager;
-					if (weatherManager.IsRaining)
+					//WeatherManager weatherManager = GameManager.Instance.WeatherManager;
+					playerGPS = GameManager.Instance.PlayerGPS;
+					playerWeather = playerGPS.GetComponent<PlayerWeather>();
+					if (playerWeather.WeatherType == WeatherType.Rain)
 					{
 						AWRoutine = StartCoroutine(PlayRain());
 					}
-					else if (weatherManager.IsSnowing)
+					else if (playerWeather.WeatherType == WeatherType.Snow)
 					{
 						AWRoutine = StartCoroutine(PlaySnow());
 					}
-					else if (weatherManager.IsStorming)
+					else if (playerWeather.WeatherType == WeatherType.Thunder)
 					{
 						BOOM = new System.Random();
-
 						AWRoutine = StartCoroutine(PlayStorm());
 					}
 
@@ -175,7 +178,9 @@ namespace AmbientWeather
 		{
 			AWSource.PlayOneShot(RainClip, RainVolume);
 
-			Rando = BOOM.Next(0, LTChance);
+			Rando = BOOM.Next(0, 101);
+			Rando = ((Rando * 3) / LTChance) - 1;
+
 			switch (Rando)
 			{
 				case 0:
