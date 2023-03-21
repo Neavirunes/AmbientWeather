@@ -76,7 +76,6 @@ namespace AmbientWeather
 			{
 				if (IndoorsCheck == 0)
 				{
-					//WeatherManager weatherManager = GameManager.Instance.WeatherManager;
 					playerGPS = GameManager.Instance.PlayerGPS;
 					playerWeather = playerGPS.GetComponent<PlayerWeather>();
 					if (playerWeather.WeatherType == WeatherType.Rain)
